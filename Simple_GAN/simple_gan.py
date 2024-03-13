@@ -12,9 +12,9 @@ class Discriminator(nn.Module):
     def __init__(self, img_dim):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(img_dim, 120),
-            nn.LeakyReLU(0.1),
-            nn.Linear(120, 1),
+            nn.Linear(img_dim, 128),
+            nn.LeakyReLU(0.01),
+            nn.Linear(128, 1),
             nn.Sigmoid(),
         )
 
@@ -26,8 +26,9 @@ class Generator(nn.Module):
     def __init__(self, z_dim, img_dim):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(img_dim, 256),
+            nn.Linear(z_dim, 256),
             nn.LeakyReLU(0.1),
+            nn.LeakyReLU(0.01),
             nn.Linear(256, img_dim),
             nn.Tanh(),
         )
@@ -47,20 +48,20 @@ num_epochs = 100
 
 disc = Discriminator(img_dim=img_dim).to(device)
 gen = Generator(z_dim=z_dim, img_dim=img_dim).to(device)
-fixed_noise = torch.randn(batch_size, z_dim).to(device)
-transform = transforms.Compose(
-    [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+fixed_noise = torch.randn((batch_size, z_dim)).to(device)
+transforms = transforms.Compose(
+    [transforms.ToTensor(), transforms.Normalize((0.4,), (0.4,))]
 )
-dataset = datasets.MNIST(root='dataset/', transforms=transform, download=True)
+dataset = datasets.MNIST(root='dataset/', transform=transforms, download=True)
 loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 opt_disc = optim.Adam(disc.parameters(), lr=lr)
 opt_gen = optim.Adam(gen.parameters(), lr=lr)
 criterion = nn.BCELoss()
-writer_fake = SummaryWriter(f'runs/GAN_MNIST/fake')
-writer_real = SummaryWriter(f'runs/GAN_MNIST/real')
+writer_fake = SummaryWriter(f'logs/SimpleGAN_MNIST/fake')
+writer_real = SummaryWriter(f'logs/SimpleGAN_MNIST/real')
 step = 0
 
-
+print("Training on", device)
 for epoch in range(num_epochs):
     for batch_idx, (img, label) in enumerate(loader):
         img = img.view(-1, 784).to(device)
